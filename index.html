@@ -10,8 +10,8 @@
 
 <style>
 body{font-family:sans-serif;padding:20px}
-button{margin:4px;padding:6px 10px;border:1px solid #ccc;cursor:pointer}
-button.active{background:black;color:white}
+button{margin:4px;padding:6px 10px;border:1px solid #ccc;cursor:pointer;background:white}
+button.active{color:white;border:none}
 .button-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 h3{margin:18px 0 6px 0;font-weight:600}
 </style>
@@ -61,7 +61,6 @@ function ordenarFechas(a,b){
   return (ya-yb)||(MESES[ma]-MESES[mb]);
 }
 
-/* 🔥 AQUÍ ESTÁ EL CAMBIO DEL CACHE */
 Papa.parse(CSV_URL + "&t=" + new Date().getTime(),{
   download:true,
   header:true,
@@ -76,6 +75,17 @@ Papa.parse(CSV_URL + "&t=" + new Date().getTime(),{
     iniciar();
   }
 });
+
+function pintarBoton(boton, candidato){
+  const color = mapaColorCandidato[candidato];
+  boton.style.backgroundColor = color;
+  boton.style.color = "white";
+}
+
+function limpiarBoton(boton){
+  boton.style.backgroundColor = "white";
+  boton.style.color = "black";
+}
 
 function iniciar(){
   const candidatos=[...new Set(
@@ -92,19 +102,35 @@ function iniciar(){
   candidatos.forEach(c=>{
     const b=document.createElement("button");
     b.textContent=c;
-    b.onclick=()=>{b.classList.toggle("active");actualizar();}
+
+    b.onclick=()=>{
+      b.classList.toggle("active");
+      if(b.classList.contains("active")){
+        pintarBoton(b,c);
+      }else{
+        limpiarBoton(b);
+      }
+      actualizar();
+    }
+
     contC.appendChild(b);
   });
 
   document.getElementById("btn-todos-candidatos").onclick=()=>{
     document.querySelectorAll("#candidatos-container button")
-      .forEach(b=>b.classList.add("active"));
+      .forEach(b=>{
+        b.classList.add("active");
+        pintarBoton(b,b.textContent);
+      });
     actualizar();
   };
 
   document.getElementById("btn-ninguno-candidatos").onclick=()=>{
     document.querySelectorAll("#candidatos-container button")
-      .forEach(b=>b.classList.remove("active"));
+      .forEach(b=>{
+        b.classList.remove("active");
+        limpiarBoton(b);
+      });
     actualizar();
   };
 
@@ -136,7 +162,7 @@ function iniciar(){
       responsive:true,
       interaction:{mode:"nearest",intersect:true},
       plugins:{
-        legend:{position:"top"},
+        legend:{display:false},   /* 👈 leyenda fuera */
         tooltip:{mode:"nearest",intersect:true}
       },
       scales:{y:{beginAtZero:true}}
