@@ -41,6 +41,24 @@ let encuestasActivas = [];
 let candidatosSeleccionados = [];
 let mesesActivos = [];
 
+/* 🎨 COLORES POR CANDIDATO (paleta tipo NYT/Tableau) */
+const COLORES = [
+"#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F",
+"#EDC948","#B07AA1","#FF9DA7","#9C755F","#BAB0AC",
+"#1F77B4","#FF7F0E","#2CA02C","#D62728","#9467BD",
+"#8C564B","#E377C2","#7F7F7F","#BCBD22","#17BECF"
+];
+
+/* 🧵 ESTILOS POR ENCUESTA */
+const ESTILOS_ENCUESTA = {
+  "Datum": [],
+  "IEP": [6,6],
+  "IPSOS": [2,6],
+  "CPI": [10,4,2,4]
+};
+
+const mapaColorCandidato = {};
+
 const MESES = {
   ene:1,feb:2,mar:3,abr:4,may:5,jun:6,
   jul:7,ago:8,sep:9,sept:9,oct:10,nov:11,dic:12
@@ -71,6 +89,11 @@ function iniciar(){
   const candidatos=[...new Set(
     rawData.filter(d=>d.tipo==="Candidato oficial").map(d=>d.candidato)
   )].sort();
+
+  /* asignar color fijo a cada candidato */
+  candidatos.forEach((c,i)=>{
+    mapaColorCandidato[c]=COLORES[i % COLORES.length];
+  });
 
   const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
   encuestasActivas=[...encuestas];
@@ -149,8 +172,11 @@ function actualizar(){
     if(!combinaciones.includes(key)) combinaciones.push(key);
   });
 
-  const datasets=combinaciones.map((key,i)=>{
+  const datasets=combinaciones.map(key=>{
     const [candidato,encuesta]=key.split("||");
+    const color = mapaColorCandidato[candidato];
+    const dash = ESTILOS_ENCUESTA[encuesta] || [];
+
     return{
       label:`${candidato} — ${encuesta}`,
       data:fechas.map(f=>{
@@ -161,6 +187,10 @@ function actualizar(){
         );
         return r? r.valor:null;
       }),
+      borderColor: color,
+      backgroundColor: color,
+      borderWidth: 2,
+      borderDash: dash,
       tension:0.3,
       spanGaps:true
     }
