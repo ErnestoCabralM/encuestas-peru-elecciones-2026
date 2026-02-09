@@ -23,6 +23,7 @@ h3{margin:18px 0 6px 0;font-weight:600}
 
 <h3>Elige un candidato</h3>
 <button id="btn-todos-candidatos">Todos los candidatos</button>
+<button id="btn-ninguno-candidatos">Deseleccionar todos</button>
 <div id="candidatos-container" class="button-group"></div>
 
 <h3>Elige una encuesta</h3>
@@ -40,7 +41,6 @@ let chart;
 let encuestaActiva = null;
 let candidatosSeleccionados = [];
 
-/* 🎨 COLORES POR CANDIDATO */
 const COLORES = [
 "#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F",
 "#EDC948","#B07AA1","#FF9DA7","#9C755F","#BAB0AC",
@@ -101,12 +101,17 @@ function iniciar(){
     actualizar();
   };
 
+  document.getElementById("btn-ninguno-candidatos").onclick=()=>{
+    document.querySelectorAll("#candidatos-container button")
+      .forEach(b=>b.classList.remove("active"));
+    actualizar();
+  };
+
   const contE=document.getElementById("encuestas-container");
   encuestas.forEach((e,i)=>{
     const b=document.createElement("button");
     b.textContent=e;
 
-    // la primera queda activa por defecto
     if(i===0){
       b.classList.add("active");
       encuestaActiva=e;
@@ -128,8 +133,17 @@ function iniciar(){
     data:{labels:[],datasets:[]},
     options:{
       responsive:true,
-      interaction:{mode:"index",intersect:false},
-      plugins:{legend:{position:"top"}},
+      interaction:{
+        mode:"nearest",
+        intersect:true
+      },
+      plugins:{
+        legend:{position:"top"},
+        tooltip:{
+          mode:"nearest",
+          intersect:true
+        }
+      },
       scales:{y:{beginAtZero:true}}
     }
   });
@@ -165,7 +179,9 @@ function actualizar(){
       backgroundColor: color,
       borderWidth: 2,
       tension:0.3,
-      spanGaps:true
+      spanGaps:true,
+      pointRadius:4,
+      pointHoverRadius:6
     }
   });
 
