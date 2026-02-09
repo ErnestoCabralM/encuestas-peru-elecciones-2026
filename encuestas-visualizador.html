@@ -3,39 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encuestas Visualizador</title>
+    <title>Visualizador de Encuestas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body>
-    <h1>Encuestas 2026</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Candidato</th>
-                <th>Encuesta 1</th>
-                <th>Encuesta 2</th>
-                <th>Encuesta 3</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Candidato 1</td>
-                <td>Resultado 1.1</td>
-                <td>Resultado 1.2</td>
-                <td>Resultado 1.3</td>
-            </tr>
-            <tr>
-                <td>Candidato 2</td>
-                <td>Resultado 2.1</td>
-                <td>Resultado 2.2</td>
-                <td>Resultado 2.3</td>
-            </tr>
-            <tr>
-                <td>Candidato 3</td>
-                <td>Resultado 3.1</td>
-                <td>Resultado 3.2</td>
-                <td>Resultado 3.3</td>
-            </tr>
-        </tbody>
-    </table>
+    <h1>Visualización de Encuestas</h1>
+    <canvas id="pollChart" width="400" height="200"></canvas>
+    <script>
+        // Cargar datos de Google Sheets
+        const url = 'LINK_A_TU_HOJA_DE_CALCULO'; // Cambia esto a tu URL de Google Sheets
+        Papa.parse(url, {
+            downloads: true,
+            complete: function(results) {
+                crearGrafico(results.data);
+            }
+        });
+
+        function crearGrafico(datos) {
+            const candidatos = [...new Set(datos.map(row => row[0]))]; // Asumiendo que el candidato es la primera columna
+            const encuestas = [...new Set(datos.map(row => row[1]))]; // Asumiendo que la encuesta es la segunda columna
+            const datasets = [];
+
+            encuestas.forEach(encuesta => {
+                const dataset = {
+                    label: encuesta,
+                    data: [],
+                    borderColor: '#' + Math.floor(Math.random()*16777215).toString(16),
+                    fill: false
+                };
+
+                candidatos.forEach(candidato => {
+                    const valores = datos.filter(row => row[0] === candidato && row[1] === encuesta);
+                    dataset.data.push(valores.map(row => parseFloat(row[2]))); // Asumiendo que los resultados están en la tercera columna
+                });
+
+                datasets.push(dataset);
+            });
+
+            const ctx = document.getElementById('pollChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [...Array(valores.length).keys()],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
