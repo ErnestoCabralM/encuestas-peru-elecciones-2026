@@ -35,10 +35,14 @@ let chart;
 let encuestasActivas = [];
 let candidatosSeleccionados = [];
 
-const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
+const MESES = {
+  ene:1,feb:2,mar:3,abr:4,may:5,jun:6,
+  jul:7,ago:8,sep:9,sept:9,oct:10,nov:11,dic:12
+};
+
 function ordenarFechas(a,b){
-  const [ma,ya]=a.split(" ");
-  const [mb,yb]=b.split(" ");
+  const [ma,ya]=a.toLowerCase().split(" ");
+  const [mb,yb]=b.toLowerCase().split(" ");
   return (ya-yb)||(MESES[ma]-MESES[mb]);
 }
 
