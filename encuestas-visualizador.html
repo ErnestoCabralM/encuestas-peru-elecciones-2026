@@ -1,63 +1,133 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador de Encuestas</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-</head>
-<body>
-    <h1>Visualización de Encuestas</h1>
-    <canvas id="pollChart" width="400" height="200"></canvas>
-    <script>
-        // Cargar datos de Google Sheets
-        const url = 'LINK_A_TU_HOJA_DE_CALCULO'; // Cambia esto a tu URL de Google Sheets
-        Papa.parse(url, {
-            downloads: true,
-            complete: function(results) {
-                crearGrafico(results.data);
-            }
-        });
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2lpNTnGdTb9RxRNujPEjF3ihNgw7IN-WPN-zG4-DJmXvYNyuc1GYPp2npeGKmnZIeNm50Fi3AZIHS/pub?gid=1021106762&single=true&output=csv";
 
-        function crearGrafico(datos) {
-            const candidatos = [...new Set(datos.map(row => row[0]))]; // Asumiendo que el candidato es la primera columna
-            const encuestas = [...new Set(datos.map(row => row[1]))]; // Asumiendo que la encuesta es la segunda columna
-            const datasets = [];
+let rawData = [];
+let chart = null;
+let candidatosSeleccionados = [];
+let encuestasActivas = [];
 
-            encuestas.forEach(encuesta => {
-                const dataset = {
-                    label: encuesta,
-                    data: [],
-                    borderColor: '#' + Math.floor(Math.random()*16777215).toString(16),
-                    fill: false
-                };
+const MESES = {
+  ene:1,feb:2,mar:3,abr:4,may:5,jun:6,
+  jul:7,ago:8,sep:9,oct:10,nov:11,dic:12
+};
 
-                candidatos.forEach(candidato => {
-                    const valores = datos.filter(row => row[0] === candidato && row[1] === encuesta);
-                    dataset.data.push(valores.map(row => parseFloat(row[2]))); // Asumiendo que los resultados están en la tercera columna
-                });
+function ordenarFechas(a,b){
+  const [ma,ya] = a.split(" ");
+  const [mb,yb] = b.split(" ");
+  return (ya - yb) || (MESES[ma] - MESES[mb]);
+}
 
-                datasets.push(dataset);
-            });
+const COLORES = [
+ '#667eea','#764ba2','#f093fb','#4facfe','#00f2fe',
+ '#43e97b','#fa709a','#fee140','#30cfd0','#330867',
+ '#ff6b6b','#4ecdc4','#45b7d1','#96ceb4','#ffeaa7'
+];
 
-            const ctx = document.getElementById('pollChart').getContext('2d');
-            const chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [...Array(valores.length).keys()],
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+function getColor(i){ return COLORES[i % COLORES.length]; }
+
+Papa.parse(CSV_URL, {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(res) {
+    rawData = res.data.map(r => ({
+      fecha: r.fecha.trim(),
+      encuesta: r.encuesta.trim(),
+      candidato: r.candidato.trim(),
+      tipo: r.Tipo?.trim() || '',
+      valor: parseFloat(r.valor)
+    }));
+    inicializar();
+  }
+});
+
+function inicializar(){
+  const candidatos = [...new Set(
+    rawData.filter(d=>d.tipo==="Candidato oficial").map(d=>d.candidato)
+  )].sort();
+
+  const encuestas = [...new Set(rawData.map(d=>d.encuesta))].sort();
+  encuestasActivas = [...encuestas];
+
+  // Botones candidatos
+  const contC = document.getElementById('candidatos-container');
+  const div = document.createElement('div');
+  div.className='button-group';
+
+  candidatos.forEach(c=>{
+    const b=document.createElement('button');
+    b.textContent=c;
+    b.onclick=()=>{b.classList.toggle('active'); actualizar();}
+    div.appendChild(b);
+  });
+  contC.appendChild(div);
+
+  // Botones encuestas
+  const contE = document.getElementById('encuestas-container');
+  encuestas.forEach(e=>{
+    const b=document.createElement('button');
+    b.textContent=e;
+    b.classList.add('active');
+    b.onclick=()=>{
+      b.classList.toggle('active');
+      encuestasActivas = Array.from(contE.querySelectorAll('.active')).map(x=>x.textContent);
+      actualizar();
+    }
+    contE.appendChild(b);
+  });
+
+  chart = new Chart(document.getElementById('grafico'), {
+    type:'line',
+    data:{labels:[],datasets:[]},
+    options:{
+      responsive:true,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'top'}},
+      scales:{y:{beginAtZero:true}}
+    }
+  });
+}
+
+function actualizar(){
+  candidatosSeleccionados = Array.from(
+    document.querySelectorAll('#candidatos-container .active')
+  ).map(b=>b.textContent);
+
+  if(!candidatosSeleccionados.length) return;
+
+  const filtrado = rawData.filter(d =>
+    candidatosSeleccionados.includes(d.candidato) &&
+    encuestasActivas.includes(d.encuesta)
+  );
+
+  const fechas = [...new Set(filtrado.map(d=>d.fecha))].sort(ordenarFechas);
+
+  const combinaciones = [];
+  filtrado.forEach(d=>{
+    const key = d.candidato+"||"+d.encuesta;
+    if(!combinaciones.includes(key)) combinaciones.push(key);
+  });
+
+  const datasets = combinaciones.map((key,i)=>{
+    const [candidato, encuesta] = key.split("||");
+    return {
+      label: `${candidato} — ${encuesta}`,
+      data: fechas.map(f=>{
+        const r = filtrado.find(x =>
+          x.fecha===f &&
+          x.candidato===candidato &&
+          x.encuesta===encuesta
+        );
+        return r? r.valor : null;
+      }),
+      borderColor:getColor(i),
+      tension:0.3,
+      spanGaps:true
+    }
+  });
+
+  chart.data.labels = fechas;
+  chart.data.datasets = datasets;
+  chart.update();
+}
+</script>
