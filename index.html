@@ -12,7 +12,8 @@
 body{font-family:sans-serif;padding:20px}
 button{margin:4px;padding:6px 10px;border:1px solid #ccc;cursor:pointer}
 button.active{background:black;color:white}
-.button-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.button-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+h3{margin:18px 0 6px 0;font-weight:600}
 </style>
 </head>
 
@@ -20,13 +21,12 @@ button.active{background:black;color:white}
 
 <h2>Intención de voto Perú 2026</h2>
 
+<h3>Elige un candidato</h3>
 <button id="btn-todos-candidatos">Todos los candidatos</button>
 <div id="candidatos-container" class="button-group"></div>
 
+<h3>Elige una encuesta</h3>
 <div id="encuestas-container" class="button-group"></div>
-
-<label>Meses</label>
-<div id="meses-container" class="button-group"></div>
 
 <canvas id="grafico" height="120"></canvas>
 
@@ -37,25 +37,16 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2lpNTnGdTb9Rx
 
 let rawData = [];
 let chart;
-let encuestasActivas = [];
+let encuestaActiva = null;
 let candidatosSeleccionados = [];
-let mesesActivos = [];
 
-/* 🎨 COLORES POR CANDIDATO (paleta tipo NYT/Tableau) */
+/* 🎨 COLORES POR CANDIDATO */
 const COLORES = [
 "#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F",
 "#EDC948","#B07AA1","#FF9DA7","#9C755F","#BAB0AC",
 "#1F77B4","#FF7F0E","#2CA02C","#D62728","#9467BD",
 "#8C564B","#E377C2","#7F7F7F","#BCBD22","#17BECF"
 ];
-
-/* 🧵 ESTILOS POR ENCUESTA */
-const ESTILOS_ENCUESTA = {
-  "Datum": [],
-  "IEP": [6,6],
-  "IPSOS": [2,6],
-  "CPI": [10,4,2,4]
-};
 
 const mapaColorCandidato = {};
 
@@ -90,16 +81,11 @@ function iniciar(){
     rawData.filter(d=>d.tipo==="Candidato oficial").map(d=>d.candidato)
   )].sort();
 
-  /* asignar color fijo a cada candidato */
   candidatos.forEach((c,i)=>{
     mapaColorCandidato[c]=COLORES[i % COLORES.length];
   });
 
   const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
-  encuestasActivas=[...encuestas];
-
-  const meses=[...new Set(rawData.map(d=>d.fecha))].sort(ordenarFechas);
-  mesesActivos=[...meses];
 
   const contC=document.getElementById("candidatos-container");
   candidatos.forEach(c=>{
@@ -116,29 +102,25 @@ function iniciar(){
   };
 
   const contE=document.getElementById("encuestas-container");
-  encuestas.forEach(e=>{
+  encuestas.forEach((e,i)=>{
     const b=document.createElement("button");
     b.textContent=e;
-    b.classList.add("active");
-    b.onclick=()=>{
-      b.classList.toggle("active");
-      encuestasActivas=Array.from(contE.querySelectorAll(".active")).map(x=>x.textContent);
-      actualizar();
-    }
-    contE.appendChild(b);
-  });
 
-  const contM=document.getElementById("meses-container");
-  meses.forEach(m=>{
-    const b=document.createElement("button");
-    b.textContent=m;
-    b.classList.add("active");
+    // la primera queda activa por defecto
+    if(i===0){
+      b.classList.add("active");
+      encuestaActiva=e;
+    }
+
     b.onclick=()=>{
-      b.classList.toggle("active");
-      mesesActivos=Array.from(contM.querySelectorAll(".active")).map(x=>x.textContent);
+      document.querySelectorAll("#encuestas-container button")
+        .forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      encuestaActiva=e;
       actualizar();
     }
-    contM.appendChild(b);
+
+    contE.appendChild(b);
   });
 
   chart=new Chart(document.getElementById("grafico"),{
@@ -158,39 +140,30 @@ function actualizar(){
     document.querySelectorAll("#candidatos-container .active")
   ).map(b=>b.textContent);
 
+  if(!encuestaActiva || !candidatosSeleccionados.length) return;
+
   const filtrado=rawData.filter(d=>
     candidatosSeleccionados.includes(d.candidato)&&
-    encuestasActivas.includes(d.encuesta)&&
-    mesesActivos.includes(d.fecha)
+    d.encuesta===encuestaActiva
   );
 
   const fechas=[...new Set(filtrado.map(d=>d.fecha))].sort(ordenarFechas);
 
-  const combinaciones=[];
-  filtrado.forEach(d=>{
-    const key=d.candidato+"||"+d.encuesta;
-    if(!combinaciones.includes(key)) combinaciones.push(key);
-  });
-
-  const datasets=combinaciones.map(key=>{
-    const [candidato,encuesta]=key.split("||");
+  const datasets=candidatosSeleccionados.map(candidato=>{
     const color = mapaColorCandidato[candidato];
-    const dash = ESTILOS_ENCUESTA[encuesta] || [];
 
     return{
-      label:`${candidato} — ${encuesta}`,
+      label:`${candidato}`,
       data:fechas.map(f=>{
         const r=filtrado.find(x=>
           x.fecha===f &&
-          x.candidato===candidato &&
-          x.encuesta===encuesta
+          x.candidato===candidato
         );
         return r? r.valor:null;
       }),
       borderColor: color,
       backgroundColor: color,
       borderWidth: 2,
-      borderDash: dash,
       tension:0.3,
       spanGaps:true
     }
