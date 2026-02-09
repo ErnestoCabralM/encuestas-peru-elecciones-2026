@@ -20,8 +20,13 @@ button.active{background:black;color:white}
 
 <h2>Intención de voto Perú 2026</h2>
 
+<button id="btn-todos-candidatos">Todos los candidatos</button>
 <div id="candidatos-container" class="button-group"></div>
+
 <div id="encuestas-container" class="button-group"></div>
+
+<label>Meses</label>
+<div id="meses-container" class="button-group"></div>
 
 <canvas id="grafico" height="120"></canvas>
 
@@ -34,6 +39,7 @@ let rawData = [];
 let chart;
 let encuestasActivas = [];
 let candidatosSeleccionados = [];
+let mesesActivos = [];
 
 const MESES = {
   ene:1,feb:2,mar:3,abr:4,may:5,jun:6,
@@ -69,6 +75,9 @@ function iniciar(){
   const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
   encuestasActivas=[...encuestas];
 
+  const meses=[...new Set(rawData.map(d=>d.fecha))].sort(ordenarFechas);
+  mesesActivos=[...meses];
+
   const contC=document.getElementById("candidatos-container");
   candidatos.forEach(c=>{
     const b=document.createElement("button");
@@ -76,6 +85,12 @@ function iniciar(){
     b.onclick=()=>{b.classList.toggle("active");actualizar();}
     contC.appendChild(b);
   });
+
+  document.getElementById("btn-todos-candidatos").onclick=()=>{
+    document.querySelectorAll("#candidatos-container button")
+      .forEach(b=>b.classList.add("active"));
+    actualizar();
+  };
 
   const contE=document.getElementById("encuestas-container");
   encuestas.forEach(e=>{
@@ -88,6 +103,19 @@ function iniciar(){
       actualizar();
     }
     contE.appendChild(b);
+  });
+
+  const contM=document.getElementById("meses-container");
+  meses.forEach(m=>{
+    const b=document.createElement("button");
+    b.textContent=m;
+    b.classList.add("active");
+    b.onclick=()=>{
+      b.classList.toggle("active");
+      mesesActivos=Array.from(contM.querySelectorAll(".active")).map(x=>x.textContent);
+      actualizar();
+    }
+    contM.appendChild(b);
   });
 
   chart=new Chart(document.getElementById("grafico"),{
@@ -109,7 +137,8 @@ function actualizar(){
 
   const filtrado=rawData.filter(d=>
     candidatosSeleccionados.includes(d.candidato)&&
-    encuestasActivas.includes(d.encuesta)
+    encuestasActivas.includes(d.encuesta)&&
+    mesesActivos.includes(d.fecha)
   );
 
   const fechas=[...new Set(filtrado.map(d=>d.fecha))].sort(ordenarFechas);
