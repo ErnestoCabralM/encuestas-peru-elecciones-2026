@@ -10,10 +10,41 @@
 
 <style>
 body{font-family:sans-serif;padding:20px}
-button{margin:4px;padding:6px 10px;border:1px solid #ccc;cursor:pointer;background:white}
-button.active{color:white;border:none}
+
 .button-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 h3{margin:18px 0 6px 0;font-weight:600}
+
+button{
+  margin:4px;padding:6px 10px;border:1px solid #ccc;
+  cursor:pointer;background:white;border-radius:6px
+}
+button.active-encuesta{
+  background:#333;color:white;border-color:#333
+}
+
+/* 🔎 Buscador */
+.search-box{position:relative;max-width:420px}
+#buscador{
+  width:100%;padding:8px;border:1px solid #ccc;border-radius:6px
+}
+.sugerencias{
+  position:absolute;top:38px;left:0;right:0;
+  border:1px solid #ddd;background:white;
+  max-height:180px;overflow:auto;z-index:10;border-radius:6px
+}
+.sugerencias div{
+  padding:6px 8px;cursor:pointer
+}
+.sugerencias div:hover{background:#f0f0f0}
+
+/* 🎨 Chips seleccionados */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{
+  padding:6px 10px;border-radius:20px;
+  color:white;font-size:14px;display:flex;
+  align-items:center;gap:8px
+}
+.chip span{cursor:pointer;font-weight:bold}
 </style>
 </head>
 
@@ -21,10 +52,12 @@ h3{margin:18px 0 6px 0;font-weight:600}
 
 <h2>Intención de voto Perú 2026</h2>
 
-<h3>Elige un candidato</h3>
-<button id="btn-todos-candidatos">Todos los candidatos</button>
-<button id="btn-ninguno-candidatos">Deseleccionar todos</button>
-<div id="candidatos-container" class="button-group"></div>
+<h3>Busca y agrega candidatos</h3>
+<div class="search-box">
+  <input id="buscador" placeholder="Escribe un nombre..." />
+  <div id="sugerencias" class="sugerencias" style="display:none"></div>
+</div>
+<div id="chips" class="chips"></div>
 
 <h3>Elige una encuesta</h3>
 <div id="encuestas-container" class="button-group"></div>
@@ -49,11 +82,9 @@ const COLORES = [
 ];
 
 const mapaColorCandidato = {};
+let listaCandidatos = [];
 
-const MESES = {
-  ene:1,feb:2,mar:3,abr:4,may:5,jun:6,
-  jul:7,ago:8,sep:9,sept:9,oct:10,nov:11,dic:12
-};
+const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,sept:9,oct:10,nov:11,dic:12};
 
 function ordenarFechas(a,b){
   const [ma,ya]=a.toLowerCase().split(" ");
@@ -76,84 +107,17 @@ Papa.parse(CSV_URL + "&t=" + new Date().getTime(),{
   }
 });
 
-function pintarBoton(boton, candidato){
-  const color = mapaColorCandidato[candidato];
-  boton.style.backgroundColor = color;
-  boton.style.color = "white";
-}
-
-function limpiarBoton(boton){
-  boton.style.backgroundColor = "white";
-  boton.style.color = "black";
-}
-
 function iniciar(){
-  const candidatos=[...new Set(
+  listaCandidatos=[...new Set(
     rawData.filter(d=>d.tipo==="Candidato oficial").map(d=>d.candidato)
   )].sort();
 
-  candidatos.forEach((c,i)=>{
+  listaCandidatos.forEach((c,i)=>{
     mapaColorCandidato[c]=COLORES[i % COLORES.length];
   });
 
-  const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
-
-  const contC=document.getElementById("candidatos-container");
-  candidatos.forEach(c=>{
-    const b=document.createElement("button");
-    b.textContent=c;
-
-    b.onclick=()=>{
-      b.classList.toggle("active");
-      if(b.classList.contains("active")){
-        pintarBoton(b,c);
-      }else{
-        limpiarBoton(b);
-      }
-      actualizar();
-    }
-
-    contC.appendChild(b);
-  });
-
-  document.getElementById("btn-todos-candidatos").onclick=()=>{
-    document.querySelectorAll("#candidatos-container button")
-      .forEach(b=>{
-        b.classList.add("active");
-        pintarBoton(b,b.textContent);
-      });
-    actualizar();
-  };
-
-  document.getElementById("btn-ninguno-candidatos").onclick=()=>{
-    document.querySelectorAll("#candidatos-container button")
-      .forEach(b=>{
-        b.classList.remove("active");
-        limpiarBoton(b);
-      });
-    actualizar();
-  };
-
-  const contE=document.getElementById("encuestas-container");
-  encuestas.forEach((e,i)=>{
-    const b=document.createElement("button");
-    b.textContent=e;
-
-    if(i===0){
-      b.classList.add("active");
-      encuestaActiva=e;
-    }
-
-    b.onclick=()=>{
-      document.querySelectorAll("#encuestas-container button")
-        .forEach(x=>x.classList.remove("active"));
-      b.classList.add("active");
-      encuestaActiva=e;
-      actualizar();
-    }
-
-    contE.appendChild(b);
-  });
+  iniciarBuscador();
+  iniciarEncuestas();
 
   chart=new Chart(document.getElementById("grafico"),{
     type:"line",
@@ -162,19 +126,99 @@ function iniciar(){
       responsive:true,
       interaction:{mode:"nearest",intersect:true},
       plugins:{
-        legend:{display:false},   /* 👈 leyenda fuera */
+        legend:{display:false},
         tooltip:{mode:"nearest",intersect:true}
       },
-      scales:{y:{beginAtZero:true}}
+      scales:{
+        y:{
+          min:0,
+          max:100
+        }
+      }
     }
   });
 }
 
-function actualizar(){
-  candidatosSeleccionados=Array.from(
-    document.querySelectorAll("#candidatos-container .active")
-  ).map(b=>b.textContent);
+/* 🔎 BUSCADOR */
+function iniciarBuscador(){
+  const input=document.getElementById("buscador");
+  const box=document.getElementById("sugerencias");
 
+  input.addEventListener("input",()=>{
+    const q=input.value.toLowerCase();
+    box.innerHTML="";
+    if(!q){box.style.display="none";return;}
+
+    const filtrados=listaCandidatos.filter(c=>
+      c.toLowerCase().includes(q) &&
+      !candidatosSeleccionados.includes(c)
+    );
+
+    filtrados.forEach(c=>{
+      const div=document.createElement("div");
+      div.textContent=c;
+      div.onclick=()=>{
+        agregarChip(c);
+        input.value="";
+        box.style.display="none";
+      }
+      box.appendChild(div);
+    });
+
+    box.style.display="block";
+  });
+}
+
+/* 🎨 CHIPS */
+function agregarChip(candidato){
+  candidatosSeleccionados.push(candidato);
+
+  const chip=document.createElement("div");
+  chip.className="chip";
+  chip.style.backgroundColor=mapaColorCandidato[candidato];
+  chip.textContent=candidato;
+
+  const x=document.createElement("span");
+  x.textContent="✕";
+  x.onclick=()=>{
+    chip.remove();
+    candidatosSeleccionados=candidatosSeleccionados.filter(c=>c!==candidato);
+    actualizar();
+  };
+
+  chip.appendChild(x);
+  document.getElementById("chips").appendChild(chip);
+  actualizar();
+}
+
+/* 🗳️ ENCUESTAS */
+function iniciarEncuestas(){
+  const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
+  const cont=document.getElementById("encuestas-container");
+
+  encuestas.forEach((e,i)=>{
+    const b=document.createElement("button");
+    b.textContent=e;
+
+    if(i===0){
+      encuestaActiva=e;
+      b.classList.add("active-encuesta");
+    }
+
+    b.onclick=()=>{
+      document.querySelectorAll("#encuestas-container button")
+        .forEach(x=>x.classList.remove("active-encuesta"));
+      b.classList.add("active-encuesta");
+      encuestaActiva=e;
+      actualizar();
+    }
+
+    cont.appendChild(b);
+  });
+}
+
+/* 📈 ACTUALIZAR GRÁFICO */
+function actualizar(){
   if(!encuestaActiva || !candidatosSeleccionados.length) return;
 
   const filtrado=rawData.filter(d=>
@@ -188,7 +232,7 @@ function actualizar(){
     const color = mapaColorCandidato[candidato];
 
     return{
-      label:`${candidato}`,
+      label:candidato,
       data:fechas.map(f=>{
         const r=filtrado.find(x=>
           x.fecha===f &&
