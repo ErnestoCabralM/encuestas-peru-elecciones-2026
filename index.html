@@ -25,6 +25,22 @@ body{
 }
 
 h2{color:#CF2C0B}
+.titulo-principal{
+  color:#CF2C0B;
+  margin-bottom:10px;
+}
+
+.subtitulo{
+  background:#CF2C0B;
+  color:#020107;
+  padding:12px 16px;
+  border-radius:6px;
+  max-width:50%;
+  line-height:1.4;
+  font-weight:600;
+  margin-bottom:24px;
+}
+  
 h3{color:#F2A33F;margin:18px 0 6px 0;font-weight:600}
 
 .button-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
@@ -35,6 +51,12 @@ button{
 }
 button.active-encuesta{
   background:#333;color:white;border-color:#333
+}
+
+.fuente{
+  margin-top:10px;
+  color:white;
+  font-size:14px;
 }
 
 /* 🔎 Buscador */
@@ -74,7 +96,10 @@ button.active-encuesta{
 
 <img src="logo.png" class="logo">
 
-<h2>Intención de voto Perú 2026</h2>
+<h2 class="titulo-principal">COMPARA ENCUESTAS</h2>
+<div class="subtitulo">
+Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos presidenciales y descubre su intención de voto.
+</div>
 
 <h3>Busca y agrega candidatos</h3>
 <div class="search-box">
@@ -88,6 +113,10 @@ button.active-encuesta{
 
 <div class="chart-wrap">
   <canvas id="grafico" height="120"></canvas>
+</div>
+
+<div class="fuente">
+Fuente: Encuestas de intención de voto para las Elecciones Generales 2026 de Ipsos, IEP, CPI y Datum
 </div>
 
 <script>
