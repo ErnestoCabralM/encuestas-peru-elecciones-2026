@@ -12,78 +12,120 @@
 body{
   font-family:sans-serif;
   padding:20px;
-  padding-top:90px; /* espacio para el logo */
+  padding-top:110px;
   background:#086495;
 }
 
 .logo{
   position:fixed;
-  top:14px;
+  top:20px;
   right:40px;
   height:90px;
   z-index:1000;
 }
 
-h2{color:#CF2C0B}
+/* TITULO */
 .titulo-principal{
   color:#CF2C0B;
-  margin-bottom:10px;
+  font-size:34px;
+  font-weight:800;
+  margin-bottom:14px;
 }
 
+/* SUBTITULO */
 .subtitulo{
   background:#CF2C0B;
   color:#020107;
-  padding:12px 16px;
+  padding:14px 18px;
   border-radius:6px;
-  max-width:50%;
   line-height:1.4;
   font-weight:600;
-  margin-bottom:24px;
+  margin-bottom:28px;
+  display:inline-block;
 }
-  
-h3{color:#F2A33F;margin:18px 0 6px 0;font-weight:600}
 
-.button-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+/* SECCIONES */
+h3{
+  color:#F2A33F;
+  margin:18px 0 6px 0;
+  font-weight:600
+}
+
+.button-group{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:14px
+}
 
 button{
-  margin:4px;padding:6px 10px;border:1px solid #ccc;
-  cursor:pointer;background:white;border-radius:6px
+  margin:4px;
+  padding:6px 10px;
+  border:1px solid #ccc;
+  cursor:pointer;
+  background:white;
+  border-radius:6px
 }
 button.active-encuesta{
-  background:#333;color:white;border-color:#333
+  background:#333;
+  color:white;
+  border-color:#333
 }
 
 .fuente{
-  margin-top:10px;
+  margin-top:14px;
   color:white;
   font-size:14px;
 }
 
-/* 🔎 Buscador */
+/* BUSCADOR */
 .search-box{position:relative;max-width:420px}
 #buscador{
-  width:100%;padding:8px;border:1px solid #ccc;border-radius:6px
+  width:100%;
+  padding:8px;
+  border:1px solid #ccc;
+  border-radius:6px
 }
 .sugerencias{
-  position:absolute;top:38px;left:0;right:0;
-  border:1px solid #ddd;background:white;
-  max-height:180px;overflow:auto;z-index:10;border-radius:6px
+  position:absolute;
+  top:38px;
+  left:0;
+  right:0;
+  border:1px solid #ddd;
+  background:white;
+  max-height:180px;
+  overflow:auto;
+  z-index:10;
+  border-radius:6px
 }
 .sugerencias div{
-  padding:6px 8px;cursor:pointer
+  padding:6px 8px;
+  cursor:pointer
 }
 .sugerencias div:hover{background:#f0f0f0}
 
-/* 🎨 Chips */
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.chip{
-  padding:6px 10px;border-radius:20px;
-  color:white;font-size:14px;display:flex;
-  align-items:center;gap:8px
+/* CHIPS */
+.chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:10px
 }
-.chip span{cursor:pointer;font-weight:bold}
+.chip{
+  padding:6px 10px;
+  border-radius:20px;
+  color:white;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  gap:8px
+}
+.chip span{
+  cursor:pointer;
+  font-weight:bold
+}
 
-/* 📊 Fondo del gráfico con aire */
+/* GRAFICO */
 .chart-wrap{
   background:#F6DBAF;
   padding:2px;
@@ -96,9 +138,10 @@ button.active-encuesta{
 
 <img src="logo.png" class="logo">
 
-<h2 class="titulo-principal">COMPARA ENCUESTAS</h2>
+<div class="titulo-principal">COMPARA ENCUESTAS</div>
+
 <div class="subtitulo">
-Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos presidenciales y descubre su intención de voto.
+Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos presidenciales y descubre su intención de voto
 </div>
 
 <h3>Busca y agrega candidatos</h3>
@@ -298,3 +341,4 @@ function actualizar(){
 
 </body>
 </html>
+
