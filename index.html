@@ -9,19 +9,27 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
+
+/* FUENTE */
+@font-face {
+  font-family: 'ArminGrotesk';
+  src: url('armin-grotesk.woff2') format('woff2');
+}
+
 body{
-  font-family:sans-serif;
+  font-family:'ArminGrotesk', sans-serif;
   padding:20px;
-  padding-top:110px;
+  padding-top:130px;
   background:#086495;
 }
 
+/* LOGO FIJO REAL */
 .logo{
   position:fixed;
   top:20px;
   right:40px;
   height:90px;
-  z-index:1000;
+  z-index:9999;
 }
 
 /* TITULO */
@@ -29,12 +37,11 @@ body{
   background:#CF2C0B;
   color:#F6DBAF;
   display:inline-block;
-  width:fit-content;
-  padding:10px 18px;
+  padding:12px 22px;
   border-radius:6px;
-  margin-bottom:16px;
+  margin-bottom:18px;
   font-weight:700;
-  font-size:42px;
+  font-size:48px;
   letter-spacing:1px;
 }
 
@@ -42,15 +49,15 @@ body{
 .subtitulo{
   background:#F2A33F;
   color:#020107;
-  padding:10px 10px;
+  padding:8px 12px;
   border-radius:6px;
   line-height:1.4;
   font-weight:600;
   margin-bottom:28px;
   display:inline-block;
+  max-width:900px;
 }
 
-/* SECCIONES */
 h3{
   color:#F2A33F;
   margin:18px 0 6px 0;
@@ -65,7 +72,6 @@ h3{
 }
 
 button{
-  margin:4px;
   padding:6px 10px;
   border:1px solid #ccc;
   cursor:pointer;
@@ -131,26 +137,26 @@ button.active-encuesta{
   font-weight:bold
 }
 
-/* GRAFICO RESPONSIVE PRO */
+/* GRAFICO */
 .chart-wrap{
   background:#F6DBAF;
-  padding:2px;
+  padding:6px;
   border-radius:6px;
 }
 
 .grafico-container{
   position:relative;
   width:100%;
-  height:420px; /* desktop */
+  height:480px;
 }
 
-/* CUADRADO EN MOVIL */
 @media (max-width:768px){
   .grafico-container{
     height:auto;
-    aspect-ratio:1 / 1;
+    aspect-ratio:1/1;
   }
 }
+
 </style>
 </head>
 
@@ -181,13 +187,13 @@ Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos p
 </div>
 
 <div class="fuente">
-Fuente: Encuestas de intención de voto para las Elecciones Generales 2026 de Ipsos, IEP, CPI y Datum
+Fuente: Ipsos, IEP, CPI y Datum
 </div>
 
 <script>
 window.onload = function(){
 
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2lpNTnGdTb9RxRNujPEjF3ihNgw7IN-WPN-zG4-DJmXvYNyuc1GYPp2npeGKmnZIeNm50Fi3AZIHS/pub?gid=1021106762&single=true&output=csv";
+const CSV_URL = "TU_CSV_AQUI";
 
 let rawData = [];
 let chart;
@@ -195,18 +201,12 @@ let encuestaActiva = null;
 let candidatosSeleccionados = [];
 
 const COLORES = ["#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F",
-"#EDC948","#B07AA1","#FF9DA7","#9C755F","#BAB0AC",
-"#1F77B4","#FF7F0E","#2CA02C","#D62728","#9467BD",
-"#8C564B","#E377C2","#7F7F7F","#BCBD22","#17BECF"];
+"#EDC948","#B07AA1","#FF9DA7","#9C755F","#BAB0AC"];
 
 const mapaColorCandidato = {};
 let listaCandidatos = [];
 
-const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,sept:9,oct:10,nov:11,dic:12};
-
-function normalizar(txt){
-  return txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-}
+const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
 
 function ordenarFechas(a,b){
   const [ma,ya]=a.toLowerCase().split(" ");
@@ -219,9 +219,9 @@ Papa.parse(CSV_URL + "&t=" + new Date().getTime(),{
   header:true,
   complete:function(res){
     rawData=res.data.map(r=>({
-      fecha:r.fecha.trim(),
-      encuesta:r.encuesta.trim(),
-      candidato:r.candidato.trim(),
+      fecha:r.fecha?.trim(),
+      encuesta:r.encuesta?.trim(),
+      candidato:r.candidato?.trim(),
       tipo:r.Tipo?.trim()||'',
       valor:parseFloat(r.valor)
     }));
@@ -247,18 +247,16 @@ function iniciar(){
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      interaction:{mode:"nearest",intersect:true},
       plugins:{legend:{display:false}},
       scales:{
         y:{
           min:0,
           max:16,
           ticks:{
-            callback: function(value){
-              return value + '%';
-            }  
+            callback:(v)=> v + '%'
           }
         }
+      }
     }
   });
 }
@@ -268,43 +266,36 @@ function iniciarBuscador(){
   const box=document.getElementById("sugerencias");
 
   input.addEventListener("input",()=>{
-    const q=normalizar(input.value);
+    const q=input.value.toLowerCase();
     box.innerHTML="";
     if(!q){box.style.display="none";return;}
 
-    const filtrados=listaCandidatos.filter(c=>
-      normalizar(c).includes(q) &&
-      !candidatosSeleccionados.includes(c)
-    );
-
-    filtrados.forEach(c=>{
-      const div=document.createElement("div");
-      div.textContent=c;
-      div.onclick=()=>{
-        agregarChip(c);
-        input.value="";
-        box.style.display="none";
-      }
-      box.appendChild(div);
-    });
+    listaCandidatos
+      .filter(c=>c.toLowerCase().includes(q) && !candidatosSeleccionados.includes(c))
+      .forEach(c=>{
+        const div=document.createElement("div");
+        div.textContent=c;
+        div.onclick=()=>{agregarChip(c); box.style.display="none"; input.value="";};
+        box.appendChild(div);
+      });
 
     box.style.display="block";
   });
 }
 
-function agregarChip(candidato){
-  candidatosSeleccionados.push(candidato);
+function agregarChip(c){
+  candidatosSeleccionados.push(c);
 
   const chip=document.createElement("div");
   chip.className="chip";
-  chip.style.backgroundColor=mapaColorCandidato[candidato];
-  chip.textContent=candidato;
+  chip.style.backgroundColor=mapaColorCandidato[c];
+  chip.textContent=c;
 
   const x=document.createElement("span");
   x.textContent="✕";
   x.onclick=()=>{
     chip.remove();
-    candidatosSeleccionados=candidatosSeleccionados.filter(c=>c!==candidato);
+    candidatosSeleccionados=candidatosSeleccionados.filter(a=>a!==c);
     actualizar();
   };
 
@@ -321,10 +312,7 @@ function iniciarEncuestas(){
     const b=document.createElement("button");
     b.textContent=e;
 
-    if(i===0){
-      encuestaActiva=e;
-      b.classList.add("active-encuesta");
-    }
+    if(i===0){ encuestaActiva=e; b.classList.add("active-encuesta"); }
 
     b.onclick=()=>{
       document.querySelectorAll("#encuestas-container button")
@@ -332,7 +320,7 @@ function iniciarEncuestas(){
       b.classList.add("active-encuesta");
       encuestaActiva=e;
       actualizar();
-    }
+    };
 
     cont.appendChild(b);
   });
@@ -348,23 +336,20 @@ function actualizar(){
 
   const fechas=[...new Set(filtrado.map(d=>d.fecha))].sort(ordenarFechas);
 
-  const datasets=candidatosSeleccionados.map(candidato=>{
-    const color = mapaColorCandidato[candidato];
+  chart.data.labels=fechas;
+  chart.data.datasets=candidatosSeleccionados.map(c=>{
     return{
-      label:candidato,
+      label:c,
       data:fechas.map(f=>{
-        const r=filtrado.find(x=>x.fecha===f && x.candidato===candidato);
+        const r=filtrado.find(x=>x.fecha===f && x.candidato===c);
         return r? r.valor:null;
       }),
-      borderColor: color,
-      borderWidth: 2,
+      borderColor:mapaColorCandidato[c],
       tension:0.3,
       spanGaps:true
-    }
+    };
   });
 
-  chart.data.labels=fechas;
-  chart.data.datasets=datasets;
   chart.update();
 }
 
@@ -373,5 +358,6 @@ function actualizar(){
 
 </body>
 </html>
+
 
 
