@@ -169,6 +169,17 @@ button.active-encuesta{
 </style>
 </head>
 
+
+<script>
+function sendHeight() {
+  const height = document.body.scrollHeight;
+  parent.postMessage(height, "*");
+}
+
+window.addEventListener("load", sendHeight);
+window.addEventListener("resize", sendHeight);
+</script>
+  
 <body>
 
 <img src="logo.png" class="logo">
