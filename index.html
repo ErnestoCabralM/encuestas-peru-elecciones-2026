@@ -249,7 +249,16 @@ function iniciar(){
       maintainAspectRatio:false,
       interaction:{mode:"nearest",intersect:true},
       plugins:{legend:{display:false}},
-      scales:{y:{min:0,max:16}}
+      scales:{
+        y:{
+          min:0,
+          max:16,
+          ticks:{
+            callback: function(value){
+              return value + '%';
+            }  
+          }
+        }
     }
   });
 }
