@@ -9,10 +9,16 @@
 <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
 <style>
-body{font-family:sans-serif;padding:20px}
+body{
+  font-family:sans-serif;
+  padding:20px;
+  background:#086495;
+}
+
+h2{color:#CF2C0B}
+h3{color:#F2A33F;margin:18px 0 6px 0;font-weight:600}
 
 .button-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-h3{margin:18px 0 6px 0;font-weight:600}
 
 button{
   margin:4px;padding:6px 10px;border:1px solid #ccc;
@@ -37,7 +43,7 @@ button.active-encuesta{
 }
 .sugerencias div:hover{background:#f0f0f0}
 
-/* 🎨 Chips seleccionados */
+/* 🎨 Chips */
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .chip{
   padding:6px 10px;border-radius:20px;
@@ -45,6 +51,13 @@ button.active-encuesta{
   align-items:center;gap:8px
 }
 .chip span{cursor:pointer;font-weight:bold}
+
+/* 📊 Fondo del gráfico con aire */
+.chart-wrap{
+  background:#F6DBAF;
+  padding:2px;
+  border-radius:6px;
+}
 </style>
 </head>
 
@@ -62,29 +75,33 @@ button.active-encuesta{
 <h3>Elige una encuesta</h3>
 <div id="encuestas-container" class="button-group"></div>
 
-<canvas id="grafico" height="120"></canvas>
+<div class="chart-wrap">
+  <canvas id="grafico" height="120"></canvas>
+</div>
 
 <script>
 window.onload = function(){
 
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2lpNTnGdTb9RxRNujPEjF3ihNgw7IN-WPN-zG4-DJmXvYNyuc1GYPp2npeGKmnZIeNm50Fi3AZIHS/pub?gid=1021106762&single=true&output=csv";
+const CSV_URL = "TU_URL_AQUI";
 
 let rawData = [];
 let chart;
 let encuestaActiva = null;
 let candidatosSeleccionados = [];
 
-const COLORES = [
-"#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F",
+const COLORES = ["#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F",
 "#EDC948","#B07AA1","#FF9DA7","#9C755F","#BAB0AC",
 "#1F77B4","#FF7F0E","#2CA02C","#D62728","#9467BD",
-"#8C564B","#E377C2","#7F7F7F","#BCBD22","#17BECF"
-];
+"#8C564B","#E377C2","#7F7F7F","#BCBD22","#17BECF"];
 
 const mapaColorCandidato = {};
 let listaCandidatos = [];
 
 const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,sept:9,oct:10,nov:11,dic:12};
+
+function normalizar(txt){
+  return txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+}
 
 function ordenarFechas(a,b){
   const [ma,ya]=a.toLowerCase().split(" ");
@@ -125,32 +142,23 @@ function iniciar(){
     options:{
       responsive:true,
       interaction:{mode:"nearest",intersect:true},
-      plugins:{
-        legend:{display:false},
-        tooltip:{mode:"nearest",intersect:true}
-      },
-      scales:{
-        y:{
-          min:0,
-          max:15
-        }
-      }
+      plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:30}}
     }
   });
 }
 
-/* 🔎 BUSCADOR */
 function iniciarBuscador(){
   const input=document.getElementById("buscador");
   const box=document.getElementById("sugerencias");
 
   input.addEventListener("input",()=>{
-    const q=input.value.toLowerCase();
+    const q=normalizar(input.value);
     box.innerHTML="";
     if(!q){box.style.display="none";return;}
 
     const filtrados=listaCandidatos.filter(c=>
-      c.toLowerCase().includes(q) &&
+      normalizar(c).includes(q) &&
       !candidatosSeleccionados.includes(c)
     );
 
@@ -169,7 +177,6 @@ function iniciarBuscador(){
   });
 }
 
-/* 🎨 CHIPS */
 function agregarChip(candidato){
   candidatosSeleccionados.push(candidato);
 
@@ -191,7 +198,6 @@ function agregarChip(candidato){
   actualizar();
 }
 
-/* 🗳️ ENCUESTAS */
 function iniciarEncuestas(){
   const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
   const cont=document.getElementById("encuestas-container");
@@ -217,7 +223,6 @@ function iniciarEncuestas(){
   });
 }
 
-/* 📈 ACTUALIZAR GRÁFICO */
 function actualizar(){
   if(!encuestaActiva || !candidatosSeleccionados.length) return;
 
@@ -230,23 +235,16 @@ function actualizar(){
 
   const datasets=candidatosSeleccionados.map(candidato=>{
     const color = mapaColorCandidato[candidato];
-
     return{
       label:candidato,
       data:fechas.map(f=>{
-        const r=filtrado.find(x=>
-          x.fecha===f &&
-          x.candidato===candidato
-        );
+        const r=filtrado.find(x=>x.fecha===f && x.candidato===candidato);
         return r? r.valor:null;
       }),
       borderColor: color,
-      backgroundColor: color,
       borderWidth: 2,
       tension:0.3,
-      spanGaps:true,
-      pointRadius:4,
-      pointHoverRadius:6
+      spanGaps:true
     }
   });
 
