@@ -202,7 +202,12 @@ let chart;
 let encuestaActiva = null;
 let candidatosSeleccionados = [];
 
-const COLORES = ["#4E79A7","#F28E2B","#E15759","#76B7B2","#59A14F"];
+function generarColorEditorial(index){
+  const hue = (index * 29) % 360;
+  const saturation = 55;
+  const lightness = 45;
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+}
 
 const mapaColorCandidato = {};
 let listaCandidatos = [];
@@ -240,7 +245,7 @@ function iniciar(){
   )].sort();
 
   listaCandidatos.forEach((c,i)=>{
-    mapaColorCandidato[c]=COLORES[i % COLORES.length];
+  mapaColorCandidato[c] = generarColorEditorial(i);
   });
 
   iniciarBuscador();
