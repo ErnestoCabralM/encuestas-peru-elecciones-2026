@@ -132,7 +132,7 @@ button.active-encuesta{
 }
 .chip span{ cursor:pointer; font-weight:bold }
 
-/* ===== GRAFICO ANTI-WORDPRESS ===== */
+/* ===== GRAFICO ===== */
 .chart-wrap{
   background:#F2E4CB;
   padding:6px;
@@ -145,11 +145,9 @@ button.active-encuesta{
   height:480px;
 }
 
-/* 👇 EL BLINDAJE */
 #grafico{
   width:100% !important;
   height:100% !important;
-  max-height:none !important;
 }
 
 @media (max-width:768px){
@@ -195,22 +193,20 @@ Fuente: Ipsos, IEP, CPI y Datum. Para los simulacros, se usan votos válidos.
 <script>
 window.onload = function(){
 
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2lpNTnGdTb9RxRNujPEjF3ihNgw7IN-WPN-zG4-DJmXvYNyuc1GYPp2npeGKmnZIeNm50Fi3AZIHS/pub?gid=1021106762&single=true&output=csv";
+const CSV_URL = "TU_LINK_AQUI";
 
 let rawData = [];
 let chart;
 let encuestaActiva = null;
-let candidatosSeleccionados = [];
+let seleccionados = [];
 
 function generarColorEditorial(index){
   const hue = (index * 29) % 360;
-  const saturation = 55;
-  const lightness = 45;
-  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  return `hsl(${hue}, 55%, 45%)`;
 }
 
-const mapaColorCandidato = {};
-let listaCandidatos = [];
+const mapaColor = {};
+let listaOpciones = [];
 
 const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
 
@@ -240,12 +236,15 @@ Papa.parse(CSV_URL,{
 });
 
 function iniciar(){
-  listaCandidatos=[...new Set(
-    rawData.filter(d=>d.tipo==="Candidato oficial").map(d=>d.candidato)
-  )].sort();
 
-  listaCandidatos.forEach((c,i)=>{
-  mapaColorCandidato[c] = generarColorEditorial(i);
+  const candidatos = [...new Set(
+    rawData.filter(d=>d.tipo==="Candidato oficial").map(d=>d.candidato)
+  )];
+
+  listaOpciones = [...candidatos, "Ninguno o indeciso"];
+
+  listaOpciones.forEach((c,i)=>{
+    mapaColor[c] = generarColorEditorial(i);
   });
 
   iniciarBuscador();
@@ -278,8 +277,8 @@ function iniciarBuscador(){
     box.innerHTML="";
     if(!q){box.style.display="none";return;}
 
-    listaCandidatos
-      .filter(c=>normalizar(c).includes(q) && !candidatosSeleccionados.includes(c))
+    listaOpciones
+      .filter(c=>normalizar(c).includes(q) && !seleccionados.includes(c))
       .forEach(c=>{
         const div=document.createElement("div");
         div.textContent=c;
@@ -292,18 +291,18 @@ function iniciarBuscador(){
 }
 
 function agregarChip(c){
-  candidatosSeleccionados.push(c);
+  seleccionados.push(c);
 
   const chip=document.createElement("div");
   chip.className="chip";
-  chip.style.backgroundColor=mapaColorCandidato[c];
+  chip.style.backgroundColor=mapaColor[c];
   chip.textContent=c;
 
   const x=document.createElement("span");
   x.textContent="✕";
   x.onclick=()=>{
     chip.remove();
-    candidatosSeleccionados=candidatosSeleccionados.filter(a=>a!==c);
+    seleccionados=seleccionados.filter(a=>a!==c);
     actualizar();
   };
 
@@ -335,23 +334,31 @@ function iniciarEncuestas(){
 }
 
 function actualizar(){
-  if(!encuestaActiva || !candidatosSeleccionados.length) return;
+  if(!encuestaActiva || !seleccionados.length) return;
 
-  const filtrado=rawData.filter(d=>
-    candidatosSeleccionados.includes(d.candidato)&&
-    d.encuesta===encuestaActiva
-  );
-
-  const fechas=[...new Set(filtrado.map(d=>d.fecha))].sort(ordenarFechas);
+  const fechas=[...new Set(
+    rawData.filter(d=>d.encuesta===encuestaActiva).map(d=>d.fecha)
+  )].sort(ordenarFechas);
 
   chart.data.labels=fechas;
-  chart.data.datasets=candidatosSeleccionados.map(c=>{
+
+  chart.data.datasets=seleccionados.map(sel=>{
+
     return{
+      label:sel,
       data:fechas.map(f=>{
-        const r=filtrado.find(x=>x.fecha===f && x.candidato===c);
+
+        if(sel==="Ninguno o indeciso"){
+          return rawData
+            .filter(d=>d.encuesta===encuestaActiva && d.fecha===f && d.tipo==="Ninguno o indeciso")
+            .reduce((sum,x)=> sum + (x.valor||0),0);
+        }
+
+        const r=rawData.find(x=>x.fecha===f && x.candidato===sel && x.encuesta===encuestaActiva);
         return r? r.valor:null;
+
       }),
-      borderColor:mapaColorCandidato[c],
+      borderColor:mapaColor[sel],
       tension:0.3,
       spanGaps:true
     };
