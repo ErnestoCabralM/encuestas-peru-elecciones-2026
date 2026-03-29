@@ -256,8 +256,12 @@ function iniciar(){
 
 listaOpciones.forEach((c,i)=>{
   if(c === "Ninguno o indeciso"){
-    mapaColor[c] = "#7A7A7A"; // gris fijo
-  } else {
+    mapaColor[c] = "#7A7A7A";
+  } 
+  else if(c === "Rafael López Aliaga"){
+    mapaColor[c] = "#0b76a0";
+  }
+  else {
     mapaColor[c] = generarColorEditorial(i);
   }
 });
