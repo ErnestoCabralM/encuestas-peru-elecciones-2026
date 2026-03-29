@@ -243,9 +243,13 @@ function iniciar(){
 
   listaOpciones = [...candidatos, "Ninguno o indeciso"];
 
-  listaOpciones.forEach((c,i)=>{
+listaOpciones.forEach((c,i)=>{
+  if(c === "Ninguno o indeciso"){
+    mapaColor[c] = "#7A7A7A"; // gris fijo
+  } else {
     mapaColor[c] = generarColorEditorial(i);
-  });
+  }
+});
 
   iniciarBuscador();
   iniciarEncuestas();
