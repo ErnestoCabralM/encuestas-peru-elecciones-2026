@@ -182,12 +182,10 @@ Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos p
 <div class="nota-buscador">
   "Ninguno o indeciso" consolida votos nulos, blancos, no sabe, etc.
 </div>
-
 <div class="search-box">
   <input id="buscador" placeholder="Escribe un nombre..." />
   <div id="sugerencias" class="sugerencias" style="display:none"></div>
 </div>
-
 <div id="chips" class="chips"></div>
 
 <h3>Elige una encuesta</h3>
@@ -200,7 +198,7 @@ Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos p
 </div>
 
 <div class="fuente">
-Fuente: Ipsos, IEP, CPI y Datum. Para los simulacros, se usan votos válidos.<br>
+Fuente: Ipsos, IEP, CPI y Datum. Para los simulacros, se usan votos válidos.</br>
 Las fechas corresponden al último día de campo de cada encuesta.
 </div>
 
@@ -222,12 +220,10 @@ function generarColorEditorial(index){
 const mapaColor = {};
 let listaOpciones = [];
 
-const ORDEN_ENCUESTAS = ["CPI","Datum","IEP","Ipsos","CPI Simulacro","Ipsos Simulacro"];
-
 const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
 
 function normalizar(t){
-  return t?.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 }
 
 function ordenarFechas(a,b){
@@ -245,7 +241,7 @@ Papa.parse(CSV_URL,{
       encuesta:r.encuesta?.trim(),
       candidato:r.candidato?.trim(),
       tipo:r.Tipo?.trim()||'',
-      valor:parseFloat(r.valor) || 0
+      valor:parseFloat(r.valor)
     }));
     iniciar();
   }
@@ -259,10 +255,32 @@ function iniciar(){
 
   listaOpciones = [...candidatos, "Ninguno o indeciso"];
 
-  listaOpciones.forEach((c,i)=>{
-    if(c==="Ninguno o indeciso") mapaColor[c]="#7A7A7A";
-    else mapaColor[c]=generarColorEditorial(i);
-  });
+listaOpciones.forEach((c,i)=>{
+  if(c === "Ninguno o indeciso"){
+    mapaColor[c] = "#7A7A7A";
+  } 
+  else if(c === "Rafael López Aliaga"){
+    mapaColor[c] = "#0b76a0";
+  }
+  else if(c === "Keiko Fujimori"){
+    mapaColor[c] = "#ed6b09";
+  }
+  else if(c === "Carlos Álvarez"){
+    mapaColor[c] = "#ffcc00";
+  }
+  else if(c === "Alfonso López Chau"){
+    mapaColor[c] = "#e90305";
+  }
+  else if(c === "Roberto Sánchez"){
+    mapaColor[c] = "#61bd10";
+  }
+  else if(c === "Jorge Nieto"){
+    mapaColor[c] = "#fad612";
+  }
+  else {
+    mapaColor[c] = generarColorEditorial(i);
+  }
+});
 
   iniciarBuscador();
   iniciarEncuestas();
@@ -329,9 +347,7 @@ function agregarChip(c){
 }
 
 function iniciarEncuestas(){
-  const encuestas=[...new Set(rawData.map(d=>d.encuesta))]
-    .sort((a,b)=> ORDEN_ENCUESTAS.indexOf(a)-ORDEN_ENCUESTAS.indexOf(b));
-
+  const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
   const cont=document.getElementById("encuestas-container");
 
   encuestas.forEach((e,i)=>{
@@ -362,16 +378,15 @@ function actualizar(){
   chart.data.labels=fechas;
 
   chart.data.datasets=seleccionados.map(sel=>{
+
     return{
       label:sel,
       data:fechas.map(f=>{
 
         if(sel==="Ninguno o indeciso"){
-          const suma = rawData
+          return rawData
             .filter(d=>d.encuesta===encuestaActiva && d.fecha===f && d.tipo==="Ninguno o indeciso")
             .reduce((sum,x)=> sum + (x.valor||0),0);
-
-          return suma || null;
         }
 
         const r=rawData.find(x=>x.fecha===f && x.candidato===sel && x.encuesta===encuestaActiva);
@@ -392,6 +407,4 @@ function actualizar(){
 
 </body>
 </html>
-
-
 
