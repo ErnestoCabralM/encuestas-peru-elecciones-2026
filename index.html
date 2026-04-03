@@ -233,8 +233,8 @@ function normalizar(t){
 }
 
 function ordenarFechas(a,b){
-  const [da,ma,ya] = a.toLowerCase().split(" ");
-  const [db,mb,yb] = b.toLowerCase().split(" ");
+  const [da,ma,ya] = a.trim().replace(/\s+/g," ").toLowerCase().split(" ");
+  const [db,mb,yb] = b.trim().replace(/\s+/g," ").toLowerCase().split(" ");
   return (ya-yb) || (MESES[ma]-MESES[mb]) || (da-db);
 }
 
@@ -454,10 +454,8 @@ function actualizarIndecisos(){
 }
 
 function formatearFecha(f){
-  console.log(JSON.stringify(f));
-  const partes = f.split(" ");
-  console.log(partes);
-  return f;
+  const partes = f.trim().replace(/\s+/g, " ").split(" ");
+  return partes[0] + " " + partes[1] + " " + partes[2].slice(-2);
 }
 
 }
