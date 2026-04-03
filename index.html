@@ -200,7 +200,7 @@ Fuente: Ipsos, IEP, CPI y Datum.<br>
 Las fechas corresponden al último día de campo.
 </div>
 
-<!-- NUEVO BLOQUE -->
+<!-- SEGUNDO BLOQUE -->
 <h3>Votos nulos, blancos e indecisos</h3>
 <div id="encuestas-indecisos" class="button-group"></div>
 
@@ -258,24 +258,55 @@ function iniciar(){
   )];
 
   listaCandidatos.forEach((c,i)=>{
-    mapaColor[c] = `hsl(${(i*37)%360},60%,45%)`;
+    if(c === "Rafael López Aliaga")      mapaColor[c] = "#0b76a0";
+    else if(c === "Keiko Fujimori")      mapaColor[c] = "#ed6b09";
+    else if(c === "Carlos Álvarez")      mapaColor[c] = "#ffcc00";
+    else if(c === "Alfonso López Chau")  mapaColor[c] = "#e90305";
+    else if(c === "Roberto Sánchez")     mapaColor[c] = "#61bd10";
+    else if(c === "Jorge Nieto")         mapaColor[c] = "#fad612";
+    else                                 mapaColor[c] = `hsl(${(i*37)%360},60%,45%)`;
   });
 
+  // ── Crear los dos charts ANTES de inicializar los controles ──
+
+  chart = new Chart(document.getElementById("grafico"),{
+    type:"line",
+    data:{labels:[],datasets:[]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{
+          min:0,
+          max:70,
+          ticks:{ callback:(v)=> v + '%' }
+        }
+      }
+    }
+  });
+
+  chartIndecisos = new Chart(document.getElementById("grafico-indecisos"),{
+    type:"line",
+    data:{labels:[],datasets:[]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{
+          min:0,
+          max:70,
+          ticks:{ callback:(v)=> v + '%' }
+        }
+      }
+    }
+  });
+
+  // ── Ahora sí inicializar los controles ──
   iniciarBuscador();
   iniciarEncuestas();
   iniciarEncuestasIndecisos();
-
-  chart=new Chart(document.getElementById("grafico"),{
-    type:"line",
-    data:{labels:[],datasets:[]},
-    options:{responsive:true,maintainAspectRatio:false}
-  });
-
-  chartIndecisos=new Chart(document.getElementById("grafico-indecisos"),{
-    type:"line",
-    data:{labels:[],datasets:[]},
-    options:{responsive:true,maintainAspectRatio:false}
-  });
 }
 
 function iniciarBuscador(){
@@ -349,7 +380,7 @@ function iniciarEncuestas(){
 
 function iniciarEncuestasIndecisos(){
   const encuestas=[...new Set(rawData.map(d=>d.encuesta))]
-    .filter(e=>!e.includes("Simulacro"));
+    .filter(e=>!e.toLowerCase().includes("simulacro"));
 
   const cont=document.getElementById("encuestas-indecisos");
 
@@ -383,18 +414,21 @@ function actualizar(){
   chart.data.labels=fechas;
 
   chart.data.datasets=seleccionados.map(sel=>({
+    label:sel,
     data:fechas.map(f=>{
       const r=rawData.find(x=>x.fecha===f && x.candidato===sel && x.encuesta===encuestaActiva);
-      return r? r.valor:null;
+      return r ? r.valor : null;
     }),
     borderColor:mapaColor[sel],
-    tension:0.3
+    tension:0.3,
+    spanGaps:true
   }));
 
   chart.update();
 }
 
 function actualizarIndecisos(){
+  if(!encuestaIndecisos) return;
 
   const fechas=[...new Set(
     rawData.filter(d=>d.encuesta===encuestaIndecisos).map(d=>d.fecha)
@@ -403,13 +437,15 @@ function actualizarIndecisos(){
   chartIndecisos.data.labels=fechas;
 
   chartIndecisos.data.datasets=[{
+    label:"Ninguno o indeciso",
     data:fechas.map(f=>{
       return rawData
         .filter(d=>d.encuesta===encuestaIndecisos && d.fecha===f && d.tipo==="Ninguno o indeciso")
-        .reduce((sum,x)=> sum + (x.valor||0),0);
+        .reduce((sum,x)=> sum + (x.valor||0), 0);
     }),
     borderColor:"#7A7A7A",
-    tension:0.3
+    tension:0.3,
+    spanGaps:true
   }];
 
   chartIndecisos.update();
