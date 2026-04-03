@@ -25,17 +25,12 @@
 body{
   font-family:'Armin Grotesk', sans-serif;
   padding:20px;
-  padding-top:130px;
   background:#086495;
 }
 
 /* ===== LOGO ===== */
 .logo{
-  position:fixed;
-  top:20px;
-  right:40px;
   height:90px;
-  z-index:9999;
 }
 
 /* ===== TITULO ===== */
@@ -170,9 +165,10 @@ button.active-encuesta{
 
 <body>
 
-<img src="logo.png" class="logo">
-
-<div class="titulo-principal">COMPARA ENCUESTAS</div>
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+  <div class="titulo-principal" style="margin-bottom:0;">COMPARA ENCUESTAS</div>
+  <img src="logo.png" class="logo">
+</div>
 
 <div class="subtitulo">
 Hemos consolidado todas las encuestas electorales.
