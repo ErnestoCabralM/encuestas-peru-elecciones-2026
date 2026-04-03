@@ -145,7 +145,7 @@ button.active-encuesta{
   height:480px;
 }
 
-#grafico{
+#grafico, #grafico-indecisos{
   width:100% !important;
   height:100% !important;
 }
@@ -175,13 +175,11 @@ button.active-encuesta{
 <div class="titulo-principal">COMPARA ENCUESTAS</div>
 
 <div class="subtitulo">
-Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos presidenciales y compara su intención de voto. Una aplicación desarrollada por La Encerrona.
+Hemos consolidado todas las encuestas electorales.
 </div>
 
 <h3>Busca y agrega candidatos</h3>
-<div class="nota-buscador">
-  "Ninguno o indeciso" consolida votos nulos, blancos, no sabe, etc.
-</div>
+
 <div class="search-box">
   <input id="buscador" placeholder="Escribe un nombre..." />
   <div id="sugerencias" class="sugerencias" style="display:none"></div>
@@ -198,8 +196,18 @@ Hemos consolidado todas las encuestas electorales. Elige uno o más candidatos p
 </div>
 
 <div class="fuente">
-Fuente: Ipsos, IEP, CPI y Datum. Para los simulacros, se usan votos válidos.</br>
-Las fechas corresponden al último día de campo de cada encuesta.
+Fuente: Ipsos, IEP, CPI y Datum.<br>
+Las fechas corresponden al último día de campo.
+</div>
+
+<!-- NUEVO BLOQUE -->
+<h3>Votos nulos, blancos e indecisos</h3>
+<div id="encuestas-indecisos" class="button-group"></div>
+
+<div class="chart-wrap">
+  <div class="grafico-container">
+    <canvas id="grafico-indecisos"></canvas>
+  </div>
 </div>
 
 <script>
@@ -208,17 +216,13 @@ window.onload = function(){
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2lpNTnGdTb9RxRNujPEjF3ihNgw7IN-WPN-zG4-DJmXvYNyuc1GYPp2npeGKmnZIeNm50Fi3AZIHS/pub?gid=1021106762&single=true&output=csv";
 
 let rawData = [];
-let chart;
+let chart, chartIndecisos;
 let encuestaActiva = null;
+let encuestaIndecisos = null;
 let seleccionados = [];
 
-function generarColorEditorial(index){
-  const hue = (index * 29) % 360;
-  return `hsl(${hue}, 55%, 45%)`;
-}
-
 const mapaColor = {};
-let listaOpciones = [];
+let listaCandidatos = [];
 
 const MESES = {ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12};
 
@@ -249,57 +253,28 @@ Papa.parse(CSV_URL,{
 
 function iniciar(){
 
-  const candidatos = [...new Set(
+  listaCandidatos=[...new Set(
     rawData.filter(d=>d.tipo==="Candidato oficial").map(d=>d.candidato)
   )];
 
-  listaOpciones = [...candidatos, "Ninguno o indeciso"];
-
-listaOpciones.forEach((c,i)=>{
-  if(c === "Ninguno o indeciso"){
-    mapaColor[c] = "#7A7A7A";
-  } 
-  else if(c === "Rafael López Aliaga"){
-    mapaColor[c] = "#0b76a0";
-  }
-  else if(c === "Keiko Fujimori"){
-    mapaColor[c] = "#ed6b09";
-  }
-  else if(c === "Carlos Álvarez"){
-    mapaColor[c] = "#ffcc00";
-  }
-  else if(c === "Alfonso López Chau"){
-    mapaColor[c] = "#e90305";
-  }
-  else if(c === "Roberto Sánchez"){
-    mapaColor[c] = "#61bd10";
-  }
-  else if(c === "Jorge Nieto"){
-    mapaColor[c] = "#fad612";
-  }
-  else {
-    mapaColor[c] = generarColorEditorial(i);
-  }
-});
+  listaCandidatos.forEach((c,i)=>{
+    mapaColor[c] = `hsl(${(i*37)%360},60%,45%)`;
+  });
 
   iniciarBuscador();
   iniciarEncuestas();
+  iniciarEncuestasIndecisos();
 
   chart=new Chart(document.getElementById("grafico"),{
     type:"line",
     data:{labels:[],datasets:[]},
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        y:{
-          min:0,
-          max:70,
-          ticks:{ callback:(v)=> v + '%' }
-        }
-      }
-    }
+    options:{responsive:true,maintainAspectRatio:false}
+  });
+
+  chartIndecisos=new Chart(document.getElementById("grafico-indecisos"),{
+    type:"line",
+    data:{labels:[],datasets:[]},
+    options:{responsive:true,maintainAspectRatio:false}
   });
 }
 
@@ -312,7 +287,7 @@ function iniciarBuscador(){
     box.innerHTML="";
     if(!q){box.style.display="none";return;}
 
-    listaOpciones
+    listaCandidatos
       .filter(c=>normalizar(c).includes(q) && !seleccionados.includes(c))
       .forEach(c=>{
         const div=document.createElement("div");
@@ -347,7 +322,11 @@ function agregarChip(c){
 }
 
 function iniciarEncuestas(){
-  const encuestas=[...new Set(rawData.map(d=>d.encuesta))].sort();
+  const orden=["CPI","Datum","IEP","IPSOS","CPI Simulacro","IPSOS Simulacro"];
+
+  const encuestas=[...new Set(rawData.map(d=>d.encuesta))]
+    .sort((a,b)=>orden.indexOf(a)-orden.indexOf(b));
+
   const cont=document.getElementById("encuestas-container");
 
   encuestas.forEach((e,i)=>{
@@ -368,6 +347,32 @@ function iniciarEncuestas(){
   });
 }
 
+function iniciarEncuestasIndecisos(){
+  const encuestas=[...new Set(rawData.map(d=>d.encuesta))]
+    .filter(e=>!e.includes("Simulacro"));
+
+  const cont=document.getElementById("encuestas-indecisos");
+
+  encuestas.forEach((e,i)=>{
+    const b=document.createElement("button");
+    b.textContent=e;
+
+    if(i===0){ encuestaIndecisos=e; b.classList.add("active-encuesta"); }
+
+    b.onclick=()=>{
+      document.querySelectorAll("#encuestas-indecisos button")
+        .forEach(x=>x.classList.remove("active-encuesta"));
+      b.classList.add("active-encuesta");
+      encuestaIndecisos=e;
+      actualizarIndecisos();
+    };
+
+    cont.appendChild(b);
+  });
+
+  actualizarIndecisos();
+}
+
 function actualizar(){
   if(!encuestaActiva || !seleccionados.length) return;
 
@@ -377,29 +382,37 @@ function actualizar(){
 
   chart.data.labels=fechas;
 
-  chart.data.datasets=seleccionados.map(sel=>{
-
-    return{
-      label:sel,
-      data:fechas.map(f=>{
-
-        if(sel==="Ninguno o indeciso"){
-          return rawData
-            .filter(d=>d.encuesta===encuestaActiva && d.fecha===f && d.tipo==="Ninguno o indeciso")
-            .reduce((sum,x)=> sum + (x.valor||0),0);
-        }
-
-        const r=rawData.find(x=>x.fecha===f && x.candidato===sel && x.encuesta===encuestaActiva);
-        return r? r.valor:null;
-
-      }),
-      borderColor:mapaColor[sel],
-      tension:0.3,
-      spanGaps:true
-    };
-  });
+  chart.data.datasets=seleccionados.map(sel=>({
+    data:fechas.map(f=>{
+      const r=rawData.find(x=>x.fecha===f && x.candidato===sel && x.encuesta===encuestaActiva);
+      return r? r.valor:null;
+    }),
+    borderColor:mapaColor[sel],
+    tension:0.3
+  }));
 
   chart.update();
+}
+
+function actualizarIndecisos(){
+
+  const fechas=[...new Set(
+    rawData.filter(d=>d.encuesta===encuestaIndecisos).map(d=>d.fecha)
+  )].sort(ordenarFechas);
+
+  chartIndecisos.data.labels=fechas;
+
+  chartIndecisos.data.datasets=[{
+    data:fechas.map(f=>{
+      return rawData
+        .filter(d=>d.encuesta===encuestaIndecisos && d.fecha===f && d.tipo==="Ninguno o indeciso")
+        .reduce((sum,x)=> sum + (x.valor||0),0);
+    }),
+    borderColor:"#7A7A7A",
+    tension:0.3
+  }];
+
+  chartIndecisos.update();
 }
 
 }
