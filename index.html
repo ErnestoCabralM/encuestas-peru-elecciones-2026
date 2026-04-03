@@ -454,8 +454,10 @@ function actualizarIndecisos(){
 }
 
 function formatearFecha(f){
+  console.log(JSON.stringify(f));
   const partes = f.split(" ");
-  return partes[0] + " " + partes[1] + " " + partes[2].slice(-2);
+  console.log(partes);
+  return f;
 }
 
 }
