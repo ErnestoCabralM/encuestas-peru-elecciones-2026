@@ -413,7 +413,7 @@ function actualizar(){
     rawData.filter(d=>d.encuesta===encuestaActiva).map(d=>d.fecha)
   )].sort(ordenarFechas);
 
-  chart.data.labels=fechas;
+  chart.data.labels=fechas.map(formatearFecha);
 
   chart.data.datasets=seleccionados.map(sel=>({
     label:sel,
@@ -436,7 +436,7 @@ function actualizarIndecisos(){
     rawData.filter(d=>d.encuesta===encuestaIndecisos).map(d=>d.fecha)
   )].sort(ordenarFechas);
 
-  chartIndecisos.data.labels=fechas;
+  chartIndecisos.data.labels=fechas.map(formatearFecha);;
 
   chartIndecisos.data.datasets=[{
     label:"Ninguno o indeciso",
@@ -451,6 +451,11 @@ function actualizarIndecisos(){
   }];
 
   chartIndecisos.update();
+}
+
+function formatearFecha(f){
+  const partes = f.split(" ");
+  return partes[0] + " " + partes[1] + " " + partes[2].slice(-2);
 }
 
 }
