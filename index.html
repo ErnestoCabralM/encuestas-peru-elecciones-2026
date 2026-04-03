@@ -233,9 +233,9 @@ function normalizar(t){
 }
 
 function ordenarFechas(a,b){
-  const [ma,ya]=a.toLowerCase().split(" ");
-  const [mb,yb]=b.toLowerCase().split(" ");
-  return (ya-yb)||(MESES[ma]-MESES[mb]);
+  const [da,ma,ya] = a.toLowerCase().split(" ");
+  const [db,mb,yb] = b.toLowerCase().split(" ");
+  return (ya-yb) || (MESES[ma]-MESES[mb]) || (da-db);
 }
 
 Papa.parse(CSV_URL,{
@@ -455,13 +455,7 @@ function actualizarIndecisos(){
 
 function formatearFecha(f){
   const partes = f.split(" ");
-  if(partes.length === 3){
-    // formato: "4 julio 2025" → "4 julio 25"
-    return partes[0] + " " + partes[1] + " " + partes[2].slice(-2);
-  } else {
-    // formato: "ago 2025" → "ago 25"
-    return partes[0] + " " + partes[1].slice(-2);
-  }
+  return partes[0] + " " + partes[1] + " " + partes[2].slice(-2);
 }
 
 }
