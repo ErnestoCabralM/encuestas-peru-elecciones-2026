@@ -354,7 +354,7 @@ function agregarChip(c){
 }
 
 function iniciarEncuestas(){
-  const orden=["CPI","Datum","IEP","IPSOS","CPI Simulacro","IPSOS Simulacro"];
+  const orden=["CPI","Datum","IEP","IPSOS","CPI Simulacro","Datum Simulacro","IPSOS Simulacro"];
 
   const encuestas=[...new Set(rawData.map(d=>d.encuesta))]
     .sort((a,b)=>orden.indexOf(a)-orden.indexOf(b));
