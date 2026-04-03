@@ -455,7 +455,13 @@ function actualizarIndecisos(){
 
 function formatearFecha(f){
   const partes = f.split(" ");
-  return partes[0] + " " + partes[1] + " " + partes[2].slice(-2);
+  if(partes.length === 3){
+    // formato: "4 julio 2025" → "4 julio 25"
+    return partes[0] + " " + partes[1] + " " + partes[2].slice(-2);
+  } else {
+    // formato: "ago 2025" → "ago 25"
+    return partes[0] + " " + partes[1].slice(-2);
+  }
 }
 
 }
