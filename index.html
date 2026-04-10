@@ -236,13 +236,15 @@ Papa.parse(CSV_URL,{
   download:true,
   header:true,
   complete:function(res){
-    rawData=res.data.map(r=>({
-      fecha:r.fecha?.trim(),
-      encuesta:r.encuesta?.trim(),
-      candidato:r.candidato?.trim(),
-      tipo:r.Tipo?.trim()||'',
-      valor:parseFloat(r.valor)
-    }));
+    rawData = res.data
+      .filter(r => (r.visible || "").trim().toUpperCase() !== "NO") // 👈 FILTRO
+      .map(r=>({
+        fecha:r.fecha?.trim(),
+        encuesta:r.encuesta?.trim(),
+        candidato:r.candidato?.trim(),
+        tipo:r.Tipo?.trim()||'',
+        valor:parseFloat(r.valor)
+      }));
     iniciar();
   }
 });
